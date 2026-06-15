@@ -17,8 +17,21 @@ function AppLayout({ children }) {
   return (
     <div className="app-layout">
       <Navbar />
-      <main className="app-main">
-        {children}
+      <main className="app-main" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1 }}>
+          {children}
+        </div>
+        <footer style={{
+          textAlign: 'center',
+          fontSize: '0.75rem',
+          color: 'var(--text-muted)',
+          opacity: 0.5,
+          paddingTop: '3rem',
+          paddingBottom: '1rem',
+          letterSpacing: '0.05em'
+        }} className="no-print">
+          Criado por Eullon
+        </footer>
       </main>
     </div>
   );

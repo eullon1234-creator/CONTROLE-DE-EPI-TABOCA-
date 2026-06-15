@@ -228,6 +228,19 @@ export default function Login() {
           )}
         </div>
       </div>
+      
+      <div style={{
+        position: 'absolute',
+        bottom: '1.5rem',
+        left: 0, right: 0,
+        textAlign: 'center',
+        fontSize: '0.75rem',
+        color: 'var(--text-muted)',
+        opacity: 0.5,
+        letterSpacing: '0.05em'
+      }}>
+        Criado por Eullon
+      </div>
     </div>
   );
 }

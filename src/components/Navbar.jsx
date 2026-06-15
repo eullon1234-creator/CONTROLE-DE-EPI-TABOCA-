@@ -139,7 +139,7 @@ export default function Navbar() {
           )}
         </div>
 
-        <div className="navbar-footer">
+        <div className="navbar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <div className="user-card">
             <div className="user-avatar">{getInitials(user?.email)}</div>
             <div className="user-info">
@@ -154,6 +154,15 @@ export default function Navbar() {
             >
               ⏏
             </button>
+          </div>
+          <div style={{
+            textAlign: 'center',
+            fontSize: '0.65rem',
+            color: 'var(--text-muted)',
+            opacity: 0.5,
+            paddingTop: '0.25rem'
+          }}>
+            Criado por Eullon
           </div>
         </div>
       </nav>
@@ -235,7 +244,7 @@ export default function Navbar() {
                 </button>
               )}
 
-              <div className="drawer-footer-user" style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+              <div className="drawer-footer-user" style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <div className="user-card" style={{ padding: 0, border: 'none', background: 'none' }}>
                   <div className="user-avatar">{getInitials(user?.email)}</div>
                   <div className="user-info" style={{ flex: 1, marginLeft: '0.75rem' }}>
@@ -249,6 +258,14 @@ export default function Navbar() {
                   >
                     Sair
                   </button>
+                </div>
+                <div style={{
+                  textAlign: 'center',
+                  fontSize: '0.65rem',
+                  color: 'var(--text-muted)',
+                  opacity: 0.5
+                }}>
+                  Criado por Eullon
                 </div>
               </div>
             </div>
