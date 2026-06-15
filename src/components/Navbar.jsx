@@ -82,7 +82,9 @@ export default function Navbar() {
       <nav className="navbar desktop-nav">
         <div className="navbar-logo">
           <div className="logo-badge">
-            <div className="logo-icon">🪖</div>
+            <div className="logo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src="./favicon.svg" alt="Logo" style={{ width: '26px', height: '26px' }} />
+            </div>
             <div className="logo-text">
               <div className="logo-title">CONTROLE DE EPI</div>
               <div className="logo-sub">Taboca</div>
@@ -189,7 +191,9 @@ export default function Navbar() {
           <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-header">
               <div className="logo-badge">
-                <div className="logo-icon" style={{ width: 30, height: 30, fontSize: '0.9rem' }}>🪖</div>
+                <div className="logo-icon" style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img src="./favicon.svg" alt="Logo" style={{ width: '18px', height: '18px' }} />
+                </div>
                 <div className="logo-text">
                   <div className="logo-title" style={{ fontSize: '0.75rem' }}>CONTROLE DE EPI</div>
                   <div className="logo-sub" style={{ fontSize: '0.6rem' }}>Taboca</div>

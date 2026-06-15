@@ -94,7 +94,9 @@ export default function Login() {
 
       <div className="login-card">
         <div className="login-logo">
-          <div className="logo-circle">🪖</div>
+          <div className="logo-circle" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <img src="./favicon.svg" alt="Logo" style={{ width: '36px', height: '36px' }} />
+          </div>
           <h1>{isRegistering ? 'CRIAR CONTA' : 'CONTROLE DE EPI'}</h1>
           <p>
             {isRegistering
