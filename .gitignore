@@ -26,3 +26,6 @@ dist-ssr
 # Vite cache
 .vite/
 
+# Excel files
+*.xlsx
+
