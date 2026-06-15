@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -10,6 +10,39 @@ export default function Login() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(
+    window.matchMedia('(display-mode: standalone)').matches
+  );
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleChange = (e) => setIsInstalled(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
+
+  async function handleInstallApp() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      alert('Para baixar o aplicativo:\n\n🖥️ No Computador: Clique no ícone de instalar na barra de endereços (ao lado do link, na parte superior direita).\n\n📱 No Celular: Abra o menu de opções do navegador (ou compartilhar no iPhone) e escolha "Adicionar à Tela de Início" ou "Instalar".');
+    }
+  }
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
@@ -165,6 +198,31 @@ export default function Login() {
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               Acesso restrito. Solicite ao administrador caso não tenha conta.
             </p>
+          )}
+
+          {!isInstalled && (
+            <button
+              onClick={handleInstallApp}
+              className="btn btn-secondary"
+              style={{
+                marginTop: '0.5rem',
+                width: '100%',
+                padding: '0.65rem',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                borderRadius: '8px',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
+                background: 'rgba(59, 130, 246, 0.08)',
+                color: 'var(--accent-blue-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer'
+              }}
+            >
+              📲 Baixar App no PC / Celular
+            </button>
           )}
         </div>
       </div>

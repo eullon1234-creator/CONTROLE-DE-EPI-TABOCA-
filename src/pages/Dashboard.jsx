@@ -21,6 +21,39 @@ export default function Dashboard() {
   const [alertas, setAlertas] = useState([]);
   const [recentes, setRecentes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(
+    window.matchMedia('(display-mode: standalone)').matches
+  );
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleChange = (e) => setIsInstalled(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
+
+  async function handleInstallApp() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      alert('Para baixar o aplicativo:\n\n🖥️ No Computador: Clique no ícone de instalar na barra de endereços (ao lado do link, na parte superior direita).\n\n📱 No Celular: Abra o menu de opções do navegador (ou compartilhar no iPhone) e escolha "Adicionar à Tela de Início" ou "Instalar".');
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -116,6 +149,65 @@ export default function Dashboard() {
           <p className="page-subtitle" style={{ textTransform: 'capitalize' }}>{today}</p>
         </div>
       </div>
+
+      {!isInstalled && (
+        <div className="card install-banner-card" style={{
+          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))',
+          border: '1px solid rgba(59, 130, 246, 0.25)',
+          padding: '1.25rem 1.5rem',
+          borderRadius: '16px',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: '-20%',
+            right: '-10%',
+            width: '200px',
+            height: '200px',
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+            pointerEvents: 'none'
+          }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: '280px', flex: 1 }}>
+            <span style={{ fontSize: '2.5rem', lineHeight: 1 }}>📲</span>
+            <div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem', marginTop: 0 }}>
+                Baixe o Aplicativo Controle de EPI
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                Instale no seu celular ou computador para ter acesso rápido direto da tela de início, melhor desempenho e modo de uso simplificado.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleInstallApp}
+            className="btn btn-primary"
+            style={{
+              padding: '0.75rem 1.5rem',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, var(--accent-blue), #4f46e5)',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <span>📥</span> Baixar Aplicativo
+          </button>
+        </div>
+      )}
 
       <div className="stats-grid">
         <StatCard icon="📦" label="Produtos Cadastrados" value={stats.total} color="blue" />
