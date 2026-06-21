@@ -1004,14 +1004,20 @@ tbody td {
 .avatar-eullon {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
 }
-.avatar-eduardo {
-  background: linear-gradient(135deg, #10b981, #047857);
+.avatar-gabriele {
+  background: linear-gradient(135deg, #ec4899, #be185d);
 }
-.avatar-joarlison {
-  background: linear-gradient(135deg, #f97316, #b91c1c);
+.avatar-tiago {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
 }
-.avatar-cicero {
+.avatar-diego {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.avatar-lorena {
   background: linear-gradient(135deg, #a855f7, #6d28d9);
+}
+.avatar-wesley {
+  background: linear-gradient(135deg, #10b981, #047857);
 }
 
 .user-select-card:hover .user-select-avatar {

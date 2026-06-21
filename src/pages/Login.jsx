@@ -5,9 +5,11 @@ import toast from 'react-hot-toast';
 
 const USERS = [
   { name: 'EULLON', email: 'eullon@controle-epi.tabooca', avatarClass: 'avatar-eullon', initials: 'EU' },
-  { name: 'EDUARDO', email: 'eduardo@controle-epi.tabooca', avatarClass: 'avatar-eduardo', initials: 'ED' },
-  { name: 'JOARLISON', email: 'joarlison@controle-epi.tabooca', avatarClass: 'avatar-joarlison', initials: 'JO' },
-  { name: 'CICERO', email: 'cicero@controle-epi.tabooca', avatarClass: 'avatar-cicero', initials: 'CI' },
+  { name: 'GABRIELE', email: 'gabriele@controle-epi.tabooca', avatarClass: 'avatar-gabriele', initials: 'GA' },
+  { name: 'TIAGO', email: 'tiago@controle-epi.tabooca', avatarClass: 'avatar-tiago', initials: 'TI' },
+  { name: 'DIEGO', email: 'diego@controle-epi.tabooca', avatarClass: 'avatar-diego', initials: 'DI' },
+  { name: 'LORENA', email: 'lorena@controle-epi.tabooca', avatarClass: 'avatar-lorena', initials: 'LO' },
+  { name: 'WESLEY', email: 'wesley@controle-epi.tabooca', avatarClass: 'avatar-wesley', initials: 'WE' },
 ];
 
 export default function Login() {
