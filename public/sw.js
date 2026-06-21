@@ -1,4 +1,4 @@
-const CACHE_NAME = 'epi-taboca-v1';
+const CACHE_NAME = 'epi-taboca-v2';
 
 // Detecta o base path dinamicamente a partir do próprio sw.js
 const BASE = self.location.pathname.replace(/\/sw\.js$/, '') || '';
