@@ -15,6 +15,7 @@ const managementItems = [
   { to: '/produtos',  icon: '🗂️', label: 'Produtos' },
   { to: '/imprimir',  icon: '🖨️', label: 'Imprimir Ficha' },
   { to: '/importar',  icon: '⬆️', label: 'Importar Dados' },
+  { to: '/relatorios', icon: '📊', label: 'Relatórios & KPIs' },
 ];
 
 function getInitials(email) {
@@ -143,7 +144,7 @@ export default function Navbar() {
           <div className="user-card">
             <div className="user-avatar">{getInitials(user?.email)}</div>
             <div className="user-info">
-              <div className="user-name">{user?.email?.split('@')[0]}</div>
+              <div className="user-name">{user?.email?.split('@')[0]?.toUpperCase()}</div>
               <div className="user-role">Usuário</div>
             </div>
             <button
@@ -226,6 +227,9 @@ export default function Navbar() {
                 <NavLink to="/importar" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}>
                   <span className="drawer-icon">⬆️</span> Importar Dados
                 </NavLink>
+                <NavLink to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}>
+                  <span className="drawer-icon">📊</span> Relatórios & KPIs
+                </NavLink>
               </div>
 
               {!isInstalled && (
@@ -248,7 +252,7 @@ export default function Navbar() {
                 <div className="user-card" style={{ padding: 0, border: 'none', background: 'none' }}>
                   <div className="user-avatar">{getInitials(user?.email)}</div>
                   <div className="user-info" style={{ flex: 1, marginLeft: '0.75rem' }}>
-                    <div className="user-name" style={{ fontSize: '0.875rem', fontWeight: 600 }}>{user?.email?.split('@')[0]}</div>
+                    <div className="user-name" style={{ fontSize: '0.875rem', fontWeight: 600 }}>{user?.email?.split('@')[0]?.toUpperCase()}</div>
                     <div className="user-role" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Usuário</div>
                   </div>
                   <button

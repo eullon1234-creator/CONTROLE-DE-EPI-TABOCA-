@@ -1,91 +1,91 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
+const USERS = [
+  { name: 'EULLON', email: 'eullon@controle-epi.tabooca', avatarClass: 'avatar-eullon', initials: 'EU' },
+  { name: 'EDUARDO', email: 'eduardo@controle-epi.tabooca', avatarClass: 'avatar-eduardo', initials: 'ED' },
+  { name: 'JOARLISON', email: 'joarlison@controle-epi.tabooca', avatarClass: 'avatar-joarlison', initials: 'JO' },
+  { name: 'CICERO', email: 'cicero@controle-epi.tabooca', avatarClass: 'avatar-cicero', initials: 'CI' },
+];
+
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isInstalled, setIsInstalled] = useState(
-    window.matchMedia('(display-mode: standalone)').matches
-  );
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    const handleChange = (e) => setIsInstalled(e.matches);
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, []);
-
-  async function handleInstallApp() {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-      }
-    } else {
-      alert('Para baixar o aplicativo:\n\n🖥️ No Computador: Clique no ícone de instalar na barra de endereços (ao lado do link, na parte superior direita).\n\n📱 No Celular: Abra o menu de opções do navegador (ou compartilhar no iPhone) e escolha "Adicionar à Tela de Início" ou "Instalar".');
-    }
-  }
-  const { login, register } = useAuth();
+  const { login, signup } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    
-    if (isRegistering && password !== confirmPassword) {
+
+    if (!selectedUser) {
+      setError('Por favor, selecione um usuário.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('A senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+
+    if (isRegisterMode && password !== confirmPassword) {
       setError('As senhas não coincidem.');
       return;
     }
 
     setLoading(true);
     try {
-      if (isRegistering) {
-        await register(email, password);
-        toast.success('Cadastro realizado com sucesso! Bem-vindo.');
+      if (isRegisterMode) {
+        await signup(selectedUser.email, password);
+        toast.success('Senha criada! Bem-vindo ao sistema!');
       } else {
-        await login(email, password);
-        toast.success('Bem-vindo ao sistema!');
+        await login(selectedUser.email, password);
+        toast.success('Bem-vindo de volta!');
       }
       navigate('/');
     } catch (err) {
-      let msg = '';
-      if (isRegistering) {
-        msg = err.code === 'auth/email-already-in-use'
-          ? 'Este e-mail já está cadastrado.'
-          : err.code === 'auth/invalid-email'
-          ? 'E-mail inválido.'
-          : err.code === 'auth/weak-password'
-          ? 'A senha deve ter pelo menos 6 caracteres.'
-          : 'Erro ao cadastrar. Verifique seus dados.';
+      console.error(err);
+      let msg = 'Erro ao realizar a operação. Verifique seus dados.';
+      
+      if (isRegisterMode) {
+        if (err.code === 'auth/email-already-in-use') {
+          msg = 'Este usuário já possui uma senha cadastrada. Faça login ou solicite alteração ao administrador.';
+        } else if (err.code === 'auth/weak-password') {
+          msg = 'A senha fornecida é muito fraca. Digite pelo menos 6 caracteres.';
+        }
       } else {
-        msg = err.code === 'auth/invalid-credential'
-          ? 'E-mail ou senha incorretos.'
-          : err.code === 'auth/user-not-found'
-          ? 'Usuário não encontrado.'
-          : 'Erro ao entrar. Verifique seus dados.';
+        if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+          msg = 'Senha incorreta. Se for seu primeiro acesso, clique em "Criar Senha" abaixo.';
+        } else if (err.code === 'auth/user-not-found') {
+          msg = 'Usuário sem senha cadastrada. Se for seu primeiro acesso, clique em "Criar Senha" abaixo.';
+        }
       }
       setError(msg);
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleSelectUser(user) {
+    setSelectedUser(user);
+    setPassword('');
+    setConfirmPassword('');
+    setIsRegisterMode(false);
+    setError('');
+  }
+
+  function handleBackToUsers() {
+    setSelectedUser(null);
+    setPassword('');
+    setConfirmPassword('');
+    setIsRegisterMode(false);
+    setError('');
   }
 
   return (
@@ -97,138 +97,133 @@ export default function Login() {
           <div className="logo-circle" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <img src="./favicon.svg" alt="Logo" style={{ width: '36px', height: '36px' }} />
           </div>
-          <h1>{isRegistering ? 'CRIAR CONTA' : 'CONTROLE DE EPI'}</h1>
-          <p>
-            {isRegistering
-              ? 'Taboca — Cadastre seu usuário'
-              : 'Taboca — Acesso ao Sistema'}
-          </p>
+          <h1>CONTROLE DE EPI</h1>
+          <p>Taboca — Acesso ao Sistema</p>
         </div>
 
-        <form className="login-form" onSubmit={handleSubmit} id="login-form">
-          {error && (
-            <div className="login-error">
-              ⚠️ {error}
+        {error && (
+          <div className="login-error" style={{ marginBottom: '1rem' }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        {!selectedUser ? (
+          <div>
+            <p style={{ textAlign: 'center', marginBottom: '1.25rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+              Selecione quem você é para continuar:
+            </p>
+            <div className="user-select-grid">
+              {USERS.map(user => (
+                <div
+                  key={user.name}
+                  className="user-select-card"
+                  onClick={() => handleSelectUser(user)}
+                >
+                  <div className={`user-select-avatar ${user.avatarClass}`}>
+                    {user.initials}
+                  </div>
+                  <div className="user-select-name">{user.name}</div>
+                </div>
+              ))}
             </div>
-          )}
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="email">E-mail</label>
-            <input
-              id="email"
-              type="email"
-              className="form-input"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              autoFocus
-            />
+            <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Cada usuário terá que criar sua própria senha no primeiro acesso.
+            </p>
           </div>
+        ) : (
+          <form className="login-form" onSubmit={handleSubmit} id="login-form">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Identificação</span>
+              <button
+                type="button"
+                className="btn-back-user"
+                onClick={handleBackToUsers}
+              >
+                ← Voltar
+              </button>
+            </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="password">Senha</label>
-            <input
-              id="password"
-              type="password"
-              className="form-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-          </div>
+            <div className="selected-user-summary">
+              <div className={`user-select-avatar ${selectedUser.avatarClass}`}>
+                {selectedUser.initials}
+              </div>
+              <div className="selected-user-summary-info">
+                <div className="selected-user-summary-name">{selectedUser.name}</div>
+                <div className="selected-user-summary-label">
+                  {isRegisterMode ? 'Cadastro de Novo Acesso' : 'Entrada Autorizada'}
+                </div>
+              </div>
+            </div>
 
-          {isRegistering && (
-            <div className="form-group">
-              <label className="form-label" htmlFor="confirm-password">Confirmar Senha</label>
+            <div className="form-group" style={{ marginTop: '0.5rem' }}>
+              <label className="form-label" htmlFor="password">
+                {isRegisterMode ? 'Criar Senha (mínimo 6 caracteres)' : 'Senha'}
+              </label>
               <input
-                id="confirm-password"
+                id="password"
                 type="password"
                 className="form-input"
                 placeholder="••••••••"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 required
+                autoFocus
               />
             </div>
-          )}
 
-          <button
-            id="btn-login"
-            type="submit"
-            className="btn btn-primary btn-lg"
-            disabled={loading}
-            style={{ marginTop: '0.5rem', justifyContent: 'center' }}
-          >
-            {loading ? (
-              <>
-                <div className="loading-spin" style={{ width: 16, height: 16 }} />
-                {isRegistering ? 'Cadastrando...' : 'Entrando...'}
-              </>
-            ) : (
-              <>{isRegistering ? '📝 Cadastrar' : '🔐 Entrar'}</>
+            {isRegisterMode && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="confirm-password">Confirmar Senha</label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  className="form-input"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
             )}
-          </button>
-        </form>
 
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <button
-            type="button"
-            className="btn-link"
-            onClick={() => {
-              setIsRegistering(!isRegistering);
-              setError('');
-              setPassword('');
-              setConfirmPassword('');
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent-blue-light)',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              textDecoration: 'underline',
-              fontFamily: 'inherit',
-              fontWeight: 500
-            }}
-          >
-            {isRegistering ? 'Já tem uma conta? Faça Login' : 'Novo por aqui? Cadastre-se'}
-          </button>
-
-          {!isRegistering && (
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Acesso restrito. Solicite ao administrador caso não tenha conta.
-            </p>
-          )}
-
-          {!isInstalled && (
             <button
-              onClick={handleInstallApp}
-              className="btn btn-secondary"
-              style={{
-                marginTop: '0.5rem',
-                width: '100%',
-                padding: '0.65rem',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                borderRadius: '8px',
-                border: '1px solid rgba(59, 130, 246, 0.25)',
-                background: 'rgba(59, 130, 246, 0.08)',
-                color: 'var(--accent-blue-light)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                cursor: 'pointer'
-              }}
+              id="btn-login"
+              type="submit"
+              className="btn btn-primary btn-lg"
+              disabled={loading}
+              style={{ marginTop: '0.5rem' }}
             >
-              📲 Baixar App no PC / Celular
+              {loading ? (
+                <>
+                  <div className="loading-spin" style={{ width: 16, height: 16 }} />
+                  {isRegisterMode ? 'Cadastrando...' : 'Entrando...'}
+                </>
+              ) : (
+                <>🔐 {isRegisterMode ? 'Criar Senha' : 'Entrar'}</>
+              )}
             </button>
-          )}
-        </div>
+
+            <div className="login-flow-toggle">
+              {isRegisterMode ? (
+                <span>
+                  Já cadastrou a sua senha?{' '}
+                  <button type="button" onClick={() => { setIsRegisterMode(false); setError(''); }}>
+                    Fazer Login
+                  </button>
+                </span>
+              ) : (
+                <span>
+                  Primeiro acesso de {selectedUser.name.charAt(0) + selectedUser.name.slice(1).toLowerCase()}?{' '}
+                  <button type="button" onClick={() => { setIsRegisterMode(true); setError(''); }}>
+                    Criar Senha
+                  </button>
+                </span>
+              )}
+            </div>
+          </form>
+        )}
       </div>
-      
+
       <div style={{
         position: 'absolute',
         bottom: '1.5rem',
