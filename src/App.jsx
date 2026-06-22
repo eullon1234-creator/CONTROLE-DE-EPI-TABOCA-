@@ -10,7 +10,6 @@ import Entrada from './pages/Entrada';
 import Estoque from './pages/Estoque';
 import Historico from './pages/Historico';
 import Produtos from './pages/Produtos';
-import Importar from './pages/Importar';
 import Imprimir from './pages/Imprimir';
 import Relatorios from './pages/Relatorios';
 
@@ -96,11 +95,7 @@ function App() {
             </PrivateRoute>
           } />
 
-          <Route path="/importar" element={
-            <PrivateRoute>
-              <AppLayout><Importar /></AppLayout>
-            </PrivateRoute>
-          } />
+
 
           <Route path="/imprimir" element={
             <PrivateRoute>

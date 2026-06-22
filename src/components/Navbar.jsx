@@ -14,7 +14,6 @@ const managementItems = [
   { to: '/historico', icon: '📋', label: 'Histórico' },
   { to: '/produtos',  icon: '🗂️', label: 'Produtos' },
   { to: '/imprimir',  icon: '🖨️', label: 'Imprimir Ficha' },
-  { to: '/importar',  icon: '⬆️', label: 'Importar Dados' },
   { to: '/relatorios', icon: '📊', label: 'Relatórios & KPIs' },
 ];
 
@@ -224,9 +223,7 @@ export default function Navbar() {
                 <NavLink to="/imprimir" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}>
                   <span className="drawer-icon">🖨️</span> Imprimir Ficha
                 </NavLink>
-                <NavLink to="/importar" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}>
-                  <span className="drawer-icon">⬆️</span> Importar Dados
-                </NavLink>
+
                 <NavLink to="/relatorios" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}>
                   <span className="drawer-icon">📊</span> Relatórios & KPIs
                 </NavLink>
