@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { fetchSignInMethodsForEmail } from 'firebase/auth';
+import { db, auth } from '../firebase/config';
 
 const USERS = [
   { name: 'EULLON', email: 'eullon@controle-epi.tabooca', avatarClass: 'avatar-eullon', initials: 'EU' },
@@ -17,7 +20,10 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [hasPassword, setHasPassword] = useState(true); // default to true
   const [loading, setLoading] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
+  const [detectionSuccess, setDetectionSuccess] = useState(false);
   const [error, setError] = useState('');
   const { login, signup } = useAuth();
   const navigate = useNavigate();
@@ -45,9 +51,27 @@ export default function Login() {
     try {
       if (isRegisterMode) {
         await signup(selectedUser.email, password);
+        // Save to Firestore
+        try {
+          await setDoc(doc(db, 'usuarios_registrados', selectedUser.email), {
+            registrado: true,
+            dataRegistro: new Date()
+          });
+        } catch (e) {
+          console.error("Erro ao salvar status de registro:", e);
+        }
+        setHasPassword(true);
+        setDetectionSuccess(true);
         toast.success('Senha criada! Bem-vindo ao sistema!');
       } else {
         await login(selectedUser.email, password);
+        // Sync Firestore
+        try {
+          await setDoc(doc(db, 'usuarios_registrados', selectedUser.email), {
+            registrado: true,
+            dataRegistro: new Date()
+          }, { merge: true });
+        } catch (_) {}
         toast.success('Bem-vindo de volta!');
       }
       navigate('/');
@@ -58,14 +82,26 @@ export default function Login() {
       if (isRegisterMode) {
         if (err.code === 'auth/email-already-in-use') {
           msg = 'Este usuário já possui uma senha cadastrada. Faça login ou solicite alteração ao administrador.';
+          setHasPassword(true);
+          setIsRegisterMode(false);
+          setDetectionSuccess(true);
+          try {
+            await setDoc(doc(db, 'usuarios_registrados', selectedUser.email), {
+              registrado: true,
+              dataRegistro: new Date()
+            }, { merge: true });
+          } catch (_) {}
         } else if (err.code === 'auth/weak-password') {
           msg = 'A senha fornecida é muito fraca. Digite pelo menos 6 caracteres.';
         }
       } else {
         if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-          msg = 'Senha incorreta. Se for seu primeiro acesso, clique em "Criar Senha" abaixo.';
+          msg = 'Senha incorreta. Se for seu primeiro acesso, clique em "Voltar" e crie sua senha.';
         } else if (err.code === 'auth/user-not-found') {
-          msg = 'Usuário sem senha cadastrada. Se for seu primeiro acesso, clique em "Criar Senha" abaixo.';
+          msg = 'Usuário sem senha cadastrada. Por favor, crie uma senha para o primeiro acesso.';
+          setHasPassword(false);
+          setIsRegisterMode(true);
+          setDetectionSuccess(true);
         }
       }
       setError(msg);
@@ -74,12 +110,69 @@ export default function Login() {
     }
   }
 
-  function handleSelectUser(user) {
+  async function handleSelectUser(user) {
     setSelectedUser(user);
     setPassword('');
     setConfirmPassword('');
-    setIsRegisterMode(false);
     setError('');
+    setCheckingStatus(true);
+    setDetectionSuccess(false);
+
+    try {
+      // 1. Try Firestore check first
+      const docRef = doc(db, 'usuarios_registrados', user.email);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists() && docSnap.data().registrado) {
+        setHasPassword(true);
+        setIsRegisterMode(false);
+        setDetectionSuccess(true);
+      } else {
+        // 2. Try fetchSignInMethodsForEmail
+        const methods = await fetchSignInMethodsForEmail(auth, user.email);
+        if (methods && methods.length > 0) {
+          setHasPassword(true);
+          setIsRegisterMode(false);
+          setDetectionSuccess(true);
+          
+          // Sync with Firestore for future fast checks
+          try {
+            await setDoc(doc(db, 'usuarios_registrados', user.email), {
+              registrado: true,
+              dataRegistro: new Date()
+            }, { merge: true });
+          } catch (_) {}
+        } else {
+          setHasPassword(false);
+          setIsRegisterMode(true); // Default to register mode for first access
+          setDetectionSuccess(true);
+        }
+      }
+    } catch (err) {
+      console.error("Erro na detecção de usuário:", err);
+      // Fallback: If both fail, try fetchSignInMethodsForEmail directly
+      try {
+        const methods = await fetchSignInMethodsForEmail(auth, user.email);
+        if (methods && methods.length > 0) {
+          setHasPassword(true);
+          setIsRegisterMode(false);
+          setDetectionSuccess(true);
+        } else {
+          setHasPassword(false);
+          setIsRegisterMode(true);
+          setDetectionSuccess(true);
+        }
+      } catch (e) {
+        console.error("Fallback detecção falhou:", e);
+        // If everything fails (e.g. offline/rules block), don't block.
+        // Default to login mode but allow toggle.
+        setHasPassword(true);
+        setIsRegisterMode(false);
+        setDetectionSuccess(false); // Show manual toggle as fallback
+      }
+    } finally {
+      setCheckingStatus(false);
+    }
   }
 
   function handleBackToUsers() {
@@ -87,7 +180,21 @@ export default function Login() {
     setPassword('');
     setConfirmPassword('');
     setIsRegisterMode(false);
+    setHasPassword(true);
+    setDetectionSuccess(false);
     setError('');
+  }
+
+  if (checkingStatus) {
+    return (
+      <div className="login-page">
+        <div className="login-bg-glow" />
+        <div className="login-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '240px' }}>
+          <div className="loading-spin" style={{ width: 32, height: 32, marginBottom: '1.25rem' }} />
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Verificando status de acesso...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -128,9 +235,23 @@ export default function Login() {
                 </div>
               ))}
             </div>
-            <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Cada usuário terá que criar sua própria senha no primeiro acesso.
-            </p>
+            
+            <div style={{
+              marginTop: '1.5rem',
+              padding: '0.85rem 1rem',
+              background: 'rgba(251, 191, 36, 0.06)',
+              border: '1px dashed rgba(251, 191, 36, 0.25)',
+              borderRadius: '10px',
+              fontSize: '0.8rem',
+              color: '#fbbf24',
+              lineHeight: '1.4',
+              display: 'flex',
+              gap: '0.625rem',
+              alignItems: 'center'
+            }}>
+              <span style={{ fontSize: '1.2rem' }}>ℹ️</span>
+              <span><strong>Primeiro Acesso?</strong> Se for a sua primeira vez no sistema, clique no seu nome e você será direcionado para criar a sua senha.</span>
+            </div>
           </div>
         ) : (
           <form className="login-form" onSubmit={handleSubmit} id="login-form">
@@ -156,6 +277,32 @@ export default function Login() {
                 </div>
               </div>
             </div>
+
+            {/* Chamado visual para primeiro acesso */}
+            {isRegisterMode && (
+              <div className="first-access-banner" style={{
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(99, 102, 241, 0.12))',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
+                padding: '0.85rem 1rem',
+                borderRadius: '10px',
+                marginBottom: '1rem',
+                color: 'var(--text-primary)',
+                fontSize: '0.825rem',
+                lineHeight: '1.4',
+                display: 'flex',
+                gap: '0.625rem',
+                alignItems: 'flex-start',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.05)'
+              }}>
+                <span style={{ fontSize: '1.35rem', lineHeight: '1' }}>🔑</span>
+                <div>
+                  <h4 style={{ margin: '0 0 0.15rem 0', fontWeight: '700', color: '#60a5fa', fontSize: '0.875rem' }}>Primeiro Acesso Detectado</h4>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                    Olá, <strong>{selectedUser.name}</strong>! Crie uma senha de acesso nos campos abaixo para ativar o seu perfil.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="form-group" style={{ marginTop: '0.5rem' }}>
               <label className="form-label" htmlFor="password">
@@ -201,25 +348,31 @@ export default function Login() {
                   {isRegisterMode ? 'Cadastrando...' : 'Entrando...'}
                 </>
               ) : (
-                <>🔐 {isRegisterMode ? 'Criar Senha' : 'Entrar'}</>
+                <>🔐 {isRegisterMode ? 'Criar Minha Senha' : 'Entrar'}</>
               )}
             </button>
 
             <div className="login-flow-toggle">
               {isRegisterMode ? (
-                <span>
-                  Já cadastrou a sua senha?{' '}
-                  <button type="button" onClick={() => { setIsRegisterMode(false); setError(''); }}>
-                    Fazer Login
-                  </button>
-                </span>
+                // Only show "Fazer Login" if we did NOT detect they lack a password (i.e. hasPassword is not false)
+                (!detectionSuccess || hasPassword) && (
+                  <span>
+                    Já cadastrou a sua senha?{' '}
+                    <button type="button" onClick={() => { setIsRegisterMode(false); setError(''); }}>
+                      Fazer Login
+                    </button>
+                  </span>
+                )
               ) : (
-                <span>
-                  Primeiro acesso de {selectedUser.name.charAt(0) + selectedUser.name.slice(1).toLowerCase()}?{' '}
-                  <button type="button" onClick={() => { setIsRegisterMode(true); setError(''); }}>
-                    Criar Senha
-                  </button>
-                </span>
+                // Only show "Criar Senha" if we did NOT detect they already have a password (i.e. hasPassword is not true)
+                (!detectionSuccess || !hasPassword) && (
+                  <span>
+                    Primeiro acesso de {selectedUser.name.charAt(0) + selectedUser.name.slice(1).toLowerCase()}?{' '}
+                    <button type="button" onClick={() => { setIsRegisterMode(true); setError(''); }}>
+                      Criar Senha
+                    </button>
+                  </span>
+                )
               )}
             </div>
           </form>
